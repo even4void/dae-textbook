@@ -1,0 +1,429 @@
+\chapter{Simple Comparative Experiments}
+\label{cha:simple-comp-exper}
+
+\section{Summary of Chapter 2}
+\label{sec:summary-chapter-2}
+After having defined the way simple comparative experiments are planned
+(treatments or conditions, levels of a factor), Montgomery briefly explains
+basic statistical concepts related to the analysis of such
+designs. This includes the ideas of sampling distributions, or hypothesis
+formulation. Two samples related problems are covered, both under
+specific distributional assumption or in an alternative non-parametric
+way. The $t$-test is probably the core concept that one has to
+understand before starting with more complex models. Indeed, the
+construction of a test statistic, the distribution assumption of this
+statistic under the null hypothesis (always stated as an absence of
+difference between treatment means), and the way one can conclude from
+the results are of primary importance. This chapter must be read by
+every scientist looking at a first primer in statistical inference.
+
+\section{Sampling distributions}
+\label{sec:sampl-distr}
+Several probabillity distributions are avalaible in \R. They are all
+prefixed with one of the following letters: \texttt{d}, \texttt{p},
+\texttt{q}, and \texttt{r}, which respectively refers to: density function,
+probability value, quantile value and random number generated from the
+distribution. For example, a sample of ten normal deviates, randomly chosen
+from the standard normal distribution (also refered to as
+$\mathcal{N}(0;1)$, or $Z$ distribution), can be obtained using
+
+<<>>=
+x <- rnorm(10)
+@ 
+
+Since each call to the random number generator (\textsc{rng}) of \R\
+involves a different random seed\footnote{Random number generators
+were originally based on a congruential recurrence relation, e.g.\\
+$x_{k+1}=a_0+b\cdot x_k\pmod{c}$, where $a_0$ is the initial (fixed)
+seed for a given sequence. Now, several sophisticated algorithms are
+available; refer to \texttt{?RNGkind}.}, it could be convenient to fix
+its value such that the same results can be obtained later. To do so,
+use something like:
+
+<<eval = FALSE>>=
+set.seed(891)
+@ 
+
+The function \texttt{set.seed} is used to set the \textsc{rng} to a
+specified state, and it takes any integer between 1 and 1023. Random values
+generation is part of statistical theory and these techniques are widely
+used in simulation sstudies. Moreover, random numbers are the core of
+several computational intensive algorithms, like the Bootstrap estimation
+procedure or Monte Carlo simulation design. A very elegant introduction to
+this topic is provided in \autocite{Gentle:2003} (see Chapter~8 for some
+hints on the use of \R\ \textsc{rng}).
+%% FIXME:
+%% - RNG shall be better explained (in a footnote or in the body)
+%% - update inline reference to chapter 8
+
+\R\ can be used to produce different kind of graphical
+representation. It's probably the most challenging statistical tool
+for that particular option.  Among them, dot diagram and histogram are
+useful tools to visualize continuous variable. Figure~\ref{fig:2.1}
+has been created with the following commands:
+
+<<eval = FALSE>>=
+  # Tension Bond Strength data (Tab. 2-1, p. 24)
+  y1 <- c(16.85,16.40,17.21,16.35,16.52,17.04,16.96,17.15,16.59,16.57)
+  y2 <- c(16.62,16.75,17.37,17.12,16.98,16.87,17.34,17.02,17.08,17.27)
+  y <- data.frame(Modified=y1,Unmodified=y2) 
+  y.means <- as.numeric(apply(y,2,mean))
+  opar <- par(mfrow=c(2,1),mar=c(5,7,4,2),las=1)
+  stripchart(y,xlab=expression("Strength (kgf/cm^2)"),pch=19)
+  arrows(y.means,rep(1.5,2),y.means,c(1.1,1.9),length=.1)
+  text(y.means,c(1.2,1.8),round(y.means,2),pos=4,cex=.8)
+  # Random deviates (instead of data from metal recovery used in the book)
+  rd <- rnorm(200,mean=70,sd=5)
+  hist(rd,xlab="quantile",ylab="Relative frequency",
+       main="Random Normal Deviates\n N(70,5)")
+  par(opar)
+@ 
+
+\begin{figure}[htb]
+\centering
+\begin{minipage}[t]{.45\textwidth}\centering
+  \includegraphics[width=.95\textwidth]{./inputs/fig1.pdf}
+  \caption{Dot diagram for the tension bond strength data (upper
+    panel) and Histogram for 200 normal random deviates (lower
+    panel).}
+  \label{fig:2.1}
+\end{minipage}\hfill
+\begin{minipage}[t]{.45\textwidth}\centering
+  \includegraphics[width=.95\textwidth]{./inputs/fig2.pdf}
+  \caption{Density estimate for the same 200 normal random deviates.}
+  \label{fig:2.2}
+\end{minipage}
+\end{figure}
+
+As can be seen with this snippet of code, relatively few commands
+allow to produce powerful graphics\ldots Indeed, several books or
+website are dedicated to exploratory multivariate graphics. Among
+others, the interested reader may have a look at:
+\begin{itemize}
+\item S. Deepayan (2008). \emph{Lattice. Multivariate Data
+    Visualization with R}\footnote{with \href{http://dsarkar.fhcrc.org/lattice/book/figures.html}{\R\ code and
+      Figures}.}. Springer.  
+  \url{http://www.springer.com/statistics/computational/book/978-0-387-75968-5} 
+\item R Graph Gallery, \url{http://addictedtor.free.fr/graphiques/}
+\item Trellis Display, \url{http://stat.bell-labs.com/project/trellis/}
+\item P. Murrel (2005). \emph{R Graphics}\footnote{with \href{http://www.stat.auckland.ac.nz/~paul/RGraphics/rgraphics.html}{\R\ code and
+    Figures}.}. 
+  Chapman \& Hall/CRC.
+\end{itemize}
+and, of course, the must-have-one book that Venables \& Ripley wrote
+on the \textsf{S} language, now in its fourth edition,
+\autocite{Venables:2002}.
+
+Histograms are naturally more appropriate when there are numerous
+observations (e.g.~$n>20$). It is not uncommon to express the data as
+a density plotted against the observed value, and to superimpose a
+normal density function with the corresponding mean and SD. However, a
+better way to highlight the distribution of the variable under study,
+especially in its continuous aspect, is to draw a non-parametric
+density curve, as shown in Figure~\ref{fig:2.2}. We often get a clearer
+picture of the underlying distribution, while the appropriate the
+number of bins used to display the histogram is not always an easy
+choice. But see \autocite{Venables:2002} (pp.~126--130) for additional
+discussion on this topic.
+
+An other solution is to use a box-and-whisker plot, also called a
+\textbf{boxplot}\marginlabel{\textsl{John Tukey} (1915--2000)
+introduced modern techniques for the estimation of spectra of time
+series, notably the Fast Fourier Transform.}. As illustrated in
+Figure~\ref{fig:2.3}, a lot of information can be found in a
+boxplot. First, the rectangle box displays half of the total
+observations, the median being shown inside as an horizontal
+segment. The upper side of the box is thus the third quartile, while
+the first quartile is located at the lower side. The extreme tickmarks
+correspond to the min and max values. However, when an observation
+exceeds $\pm 1.5$ times the inter-quartile range from the median, it
+is explicitely drawn on the plot, and the extreme tickmarks then
+correspond to these reference values. This way of handling what could
+be considered as ``extreme values'' in \R\ is known as the Tukey's
+method. To get such a grahics, one use \texttt{boxplot} function which
+accept either formula or variable $+$ factor
+inputs. Figure~\ref{fig:2.3} is thus simply produced using
+
+<<eval = FALSE>>=
+boxplot(y, ylab = "Strength (kgf/cm^2)",las = 1)
+@ 
+
+\begin{figure}[ht]
+\centering
+  \includegraphics[width=.5\textwidth]{./inputs/fig3.pdf}
+  \caption{Boxplot for the portland cement tension bond strength
+    experiment.}\label{fig:2.3}
+\end{figure}
+
+An example of a Laplace-Gauss---or the ``normal'', for
+short---distribution, with mean 0 and SD 1, is shown in
+Figure~\ref{fig:gauss}. As it is a density function, its area equals 1
+and any are comprised between two $x$-values can be calculated very
+easily using modern computer software. For instance, the shaded gray
+area, which is the probability $P(1.2\leq y<2.4$, is estimated to be
+0.107. With \R, it is obtained using 
+
+<<>>=
+pnorm(2.4) - pnorm(1.2)
+@ 
+
+
+\begin{figure}[htb]
+\centering
+<<normdist, fig.width = 6>>=
+x <- seq(-3.5,3.5,by=0.01)
+y <- dnorm(x)
+plot(x,y,xlab="",ylab="",type="l",axes=F,lwd=2)
+axis(side=1,cex.axis=.8); axis(2,pos=0,las=1,cex.axis=.8)
+mtext(expression(mu),side=1,line=2,at=0)
+mtext(expression(paste(frac(1, sigma*sqrt(2*pi)), " ",
+                       plain(e)^{frac(-(x-mu)^2,
+                       2*sigma^2)})),side=3,line=0)
+# highlight a specific area (drawing is from left to right, 
+# then from right to left)
+polygon(c(x[471:591],rev(x[471:591])),c(rep(0,121),rev(y[471:591])),
+        col="lightgray",border=NA)
+@ 
+\caption{The ``normal'' density function.}\label{fig:gauss} 
+\end{figure}
+
+\section{Testing hypotheses}
+\label{sec:testing-hypotheses}
+Statistical hypothesis are generally formulated, based on a given
+model, as a set of two opposite assertions, the \emph{null hypothesis}
+being that the statistics reflecting some knowledge about the
+treatment effect are not different one from the other. Consider a
+possible analytical model that describes two-sample related outcomes:
+\begin{equation}\label{eq:model1}
+  y_{ij}=\mu_i+\varepsilon_{ij}\qquad i=1,2;\, j=1,2,\dots,n_i,
+\end{equation}
+where $y_{ij}$ are the observations gathered from (statistical) unit
+$j$ in group $i$, and $\mu_i$ is the group mean.
+Then, the corresponding hypothesis that can be formulated is
+\begin{equation}\label{eq:hyp1}
+  \begin{array}{ll}
+    H_0: & \mu_1=\mu_2 \\
+    H_1: & \mu_1\neq\mu_2.
+  \end{array}
+\end{equation}
+Here $H_0$ denotes the null hypothesis of the absence of effect while
+$H_1$ (also denoted $H_A$ by some authors) is the logical negation of
+$H_0$.
+
+This testing framework lead to consider two kind of potential errors:
+Type I error ($\alpha$) when we reject the null while it is true in
+the real world, Type II error ($\beta$) when the null is not rejected
+while it should have been. Formally, this is equivalent to
+\begin{equation}\label{eq:hyp2}
+  \begin{array}{lll}
+  \alpha &= \Pr(\textrm{Type I error}) &= \Pr(\textrm{reject}\; H_0\mid H_0\;\textrm{is
+    true})\\
+  \beta &= \Pr(\textrm{Type II error}) &= \Pr(\textrm{fail to
+    reject}\;H_0\mid H_0\,\textrm{is false})
+  \end{array}
+\end{equation}
+Using this notation, $\alpha$ is generally refered to as the
+significance level, and it is what is reported by statistical software
+when running a given test. Both kind of error are equally important,
+although Type II error tends to be neglected in many
+studies. Figure~\ref{fig:hypothesis} highlights the relation between
+these two quantities, based on two hypothetical distributions. The
+script is taken from \textsc{cran} website (but it is not very difficult to
+reproduce with a few commands). 
+
+% FIXME:
+% change the following picture
+%% \begin{figure}[ht]
+%% \centering
+%%   \includegraphics[width=.5\textwidth]{}
+%%   \caption{Type I and II errors.}\label{fig:hypothesis}
+%% \end{figure}
+
+\section{The two-sample $t$-test}
+Comparing two set of observations on a response variable involves
+three steps: (1) constructing a test statistics, (2) defining its
+sampling distribution, and (3) computing the associated $p$-value. As
+already said, the $p$-value represents the probability of observing a
+value at least as extremal as that observed using the present
+data. This is obviously a purely frequentist approach, but it proves
+to be sufficient in most cases.
+
+The test statistic is given by
+\begin{equation}\label{eq:t-test}
+  t_0=\frac{\bar{y}_1-\bar{y}_2}{S_p\sqrt{\frac{1}{n_1}+\frac{1}{n_2}}},
+\end{equation}
+where $\bar{y}_{1,2}$ are the group means, $n_{1,2}$ the sample sizes
+and $S_p$ an estimate of what is called the pooled variance. When
+$n_1=n_2$, the design is said to be \emph{balanced}. The pooled
+variance is simply the average of the within-group variance, and is
+computed, in the general case, as
+\begin{equation}\label{eq:t-test2}
+  S_p^2=\frac{(n_1-1)S_1^2+(n_2-1)S_2^2}{n_1+n_2-2}.
+\end{equation}
+The quantity $n_1+n_2-2$ is called the \emph{degrees of freedom} of the test
+statistics, that is the number of observations free to vary
+independently.
+
+There, we must distinguish two approaches in the inferential paradigm
+and the interpretation of the $p$-value. According to the Neyman \&
+Pearson's view, the statistical test provides an answer to a purely
+binary decision (accept or reject the null hypothesis) and the value
+of the $p$ is not to be interpreted further than its position with
+respect to a criterion value, say 5\%, defined before the start of the
+experiment\footnote{The Neyman-Pearson criterion says that we should
+construct our decision rule to have maximum probability of detection
+while not allowing the probability of false alarm to exceed a certain
+value $\alpha$. It can be shown that a likelihood ratio test that
+reject $H_0$ in favor of the alternative hypothesis is the most
+powerful test of size $\alpha$, though in most case, this test is not
+used.}. On the contrary, \textbf{Fisher}\marginlabel{\textsl{Sir
+Ronald Aylmer Fisher} (1890--1962) significantly contributed to the
+development of methods and sampling distributions suitable for small
+samp- les, and he's considered the father of analysis of variance.}
+\cite{Fisher:1990} has defended the idea that the value of $p$ itself
+provides an indication of the strength of the result against the null
+hypothesis.
+
+There are very long-standing debates on these two approaches and on
+the way statistical results can be interpreted. We will use most of
+the time the former approach (binary decision rule) but also provide
+the value of the resulting $p$, though it is generally computed based
+on asymptotic theoretical results.
+
+% FIXME:
+% add a reference illustrating the debate
+
+Confidence interval (CI) can be computed easily based on the sampling
+distribution of the test statistic, which is the well-known Student
+$\mathcal{T}(\nu)$ distribution whose quantiles are available in \R\ (see
+\verb|?qt|). The general formulation of a $100(1-\alpha)$\% confidence
+interval for a difference of two means, say $\bar{y}_1-\bar{y}_2$, is
+easily obtained as
+\begin{equation}\label{eq:t-test3}
+  (\bar{y}_1-\bar{y}_2) \pm t_{\alpha/2,n_1+n_2-2}S_p\sqrt{\frac{1}{n_1}+\frac{1}{n_2}}
+\end{equation}
+where $\alpha=0.05$ means a 95\% CI. Interesting discussions on the
+use and interpretation of a confidence interval can be found in
+articles wrote by Lecoutre and coworkers,
+e.g. \autocite{Lecoutre:2001,Lecoutre:2003}. 
+
+The function \texttt{t.test} can be applied to the Tension Bond
+Strength data.
+
+<<eval = FALSE>>=
+t.test(y1, y2, var.equal = TRUE)
+@ 
+
+%% FIXME:
+%% missing loading data step
+
+The output is shown below:
+\begin{verbatim}
+	Two Sample t-test
+
+data:  y1 and y2 
+t = -2.1869, df = 18, p-value = 0.0422
+alternative hypothesis: true difference in means is not equal to 0 
+95 percent confidence interval:
+ -0.54507339 -0.01092661 
+sample estimates:
+mean of x mean of y 
+   16.764    17.042 
+\end{verbatim}
+\R\ gives both the $t_0$, degrees of freedom and $p$-value, as well as
+the 95\% confidence interval computed using
+Formula~\ref{eq:t-test3}. The test is significant at the commonly
+admitted 5\% level, or, alternatively, the $p$-value provides
+strengthening evidence against the null. We reach a similar conclusion
+when interpreting the 95\% CI as it does not cover 0. Overall, there
+is a 0.278 kgf/cm$^2$ difference between the two treatments.
+
+<<eval = FALSE>>=
+as.numeric(diff(apply(y,2,mean)))
+@ 
+
+\label{para:Welch}
+If we omit the \texttt{var.equal = TRUE} option, \R\ computes the Welch
+modified $t$-test. In this case, instead of using a pooled variance
+estimate, degrees of freedom are approximate to get a less liberal
+$p$-value; this is also refered to as \emph{Satterthwaite approximate
+$p$-value} \autocite{Satterthwaite:1946,Welch:1947}. The formula for
+computing degree of freedom is then
+\begin{equation}\label{eq:satterthwaite}
+  \nu=\frac{2(w_1+w_2)}{w_{12}/(n_1-1)+w_{22}/(n_2-1)}
+\end{equation}
+
+Applied to the preceding example, this gives a $t$-value of -2.187,
+with 17.025 df, and a $p$-value of 0.043.
+
+As reporting a non-integer degree of freedom may be confusing, it is
+often neglected. Here, as variance are not too different between the
+two groups, we get quite comparable $p$-value because it isn't
+necessary to adjust very strongly the degrees of freedom of the test
+statistic.
+
+
+\section{Comparing a single mean to a criterion value}
+
+\section{Application to paired samples}
+Another situation arises when the two samples are related in some
+way. For example, we can imagine an experiment where a number of
+specimens are tested by both tip 1 and tip 2. Data are in
+\texttt{hardness.txt}.
+
+<<>>=
+tmp <- scan("data/hardness.txt", sep = ",")
+hardness <- data.frame(y = tmp, tip = gl(2,10))
+t.test(y ~ tip, data = hardness, paired = TRUE)
+@ 
+
+Here, we cannot conclude to a significant difference between the two
+tips ($t(9)=-0.26,\, p=0.798$).  If we look at a plot of the two
+evaluations (Fig.~\ref{fig:hardness}, left), we can see that both are
+distributed along a line with slope 1 suggesting a close agreement
+between Tip 1 and Tip 2. In this particular context, a more useful way
+of checking agreement is to plot the difference between Tip 1 and Tip
+2 as a function of the sum of the two evaluations
+(Fig.~\ref{fig:hardness}, right). This was initially proposed for
+assessing biomedical agreement by \cite{Bland:1986}.
+\begin{verbatim}
+  with(hardness, plot(y[tip==1],y[tip==2],xlab="Tip 1",ylab="Tip 2"))
+  abline(0,1)
+  with(hardness, plot(y[tip==1]+y[tip==2],y[tip==1]-y[tip==2],
+                      xlab="Tip 1 + Tip 2",ylab="Tip 1 - Tip 2",ylim=c(-3,3)))
+  abline(h=0)
+\end{verbatim}
+
+%% \begin{figure}[htb]
+%% \centering
+%% \begin{tabular}{cc}
+%%   \includegraphics[width=.5\textwidth]{./img/hardness1.eps} &
+%%   \includegraphics[width=.5\textwidth]{./img/hardness2.eps}
+%% \end{tabular}
+%% \caption{The Hardness testing experiment.}\label{fig:hardness} 
+%% \end{figure}
+
+Let's look at we would get if we ignore the pairing:
+<<>>=
+t.test(y ~ tip, data = hardness, var.equal = TRUE)
+@ 
+  
+As expected, the degree of freedoms are twice the previous ones
+($n_1+n_2-2=2(n-1)$ when $n_1=n_2=n$) and the $t$-value is larger
+reflecting the extra variance not accounted for.
+
+
+\section{Non-parametric alternative}
+For two-sample comparisons, two non-parametric tests can be used,
+depending on the way data are collected. If both sample are
+independent, we use Mann-Whitney-Wilcoxon rank sum test, while for
+paired sample the corresponding test is called Wilcoxon signed rank
+test. 
+
+Both are called using \R\ function \texttt{wilcox.test} and the option
+\texttt{paired=TRUE} or \texttt{FALSE}. For the previous examples, we get
+
+\begin{verbatim}
+  wilcox.test(y1,y2)
+  wilcox.test(y~tip,data=hardness,paired=TRUE)
+\end{verbatim}
